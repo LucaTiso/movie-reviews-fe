@@ -8,6 +8,10 @@ import { Margin } from '@mui/icons-material';
 import {Button} from '@mui/material';
 import {useLocation} from 'react-router-dom';
 import { useNavigate } from "react-router-dom";
+import {useState,useEffect,useRef} from "react";
+import axios from 'axios';
+import { useContext } from "react";
+import { AppContext } from "../App";
 
 const Item = styled('div')(({ theme }) => ({
     border: '1px solid',
@@ -19,23 +23,96 @@ const Item = styled('div')(({ theme }) => ({
 
 export const MovieDetail=() =>{
 
+  const shouldLoad=useRef(true);
+
+  const { userData } = useContext(AppContext);
+
+
+  const [currentMovie,setMovie]=useState({
+    cast:"",
+    duration:null,
+    genre:"",
+    href:"",
+    id:null,
+    metascore:null,
+    metascoreNumRatings:null,
+    movieRatingCategory:"",
+    plot:"",
+    production:"",
+    regia:"",
+    star:"",
+    title:"",
+    reviewId:null,
+    userNumRatings:null,
+    userRating:null,
+    year:null
+
+  });
+
+
+  useEffect(()=>{
+    if(shouldLoad.current){
+      shouldLoad.current=false;
+      let currentMovie=location.state;
+      loadData(currentMovie.id);
+    }
+    
+  },[]);
+
     const location=useLocation();
 
-    let currentMovie=location.state;
-    
+
     const navigate=useNavigate();
 
     const rightMargin= {margin:"0 auto"};
     const leftMargin = {margin:"0 0 0 2rem"}
 
     const buttonContainer= {display:"flex",float:'right'};
-
     const buttonStyle= {margin : "1rem",height:'3rem', width:'100%'};
 
 
-    const showReviews=()=>{
-        console.log("cliccato show reviews");
+    const loadData=(id:number)=>{
+      let loadUrl="http://localhost:8080/api/movies/"+id;
+
+
+      let config={};
+
+      if(userData!=null){
+        config = {
+          headers: {
+              'Authorization': "Bearer " + userData.jwtToken
+          }
+      };
+      }
+
+      axios.get(loadUrl,config).then((response)=>{
+        console.log(response);
+        setMovie(response.data);
+      });
     }
+
+
+    const showMetacriticReviews=()=>{
+        console.log("cliccato show metacritic reviews");
+
+        let movieData={
+          id:currentMovie.id,
+          title:currentMovie.title
+        }
+
+        navigate("/metacriticReviews", { state: movieData });
+    }
+
+    const showWebappReviews=()=>{
+      console.log("cliccato show webapp reviews");
+
+      let movieData={
+        id:currentMovie.id,
+        title:currentMovie.title
+      }
+
+      navigate("/webappReviews", { state: movieData });
+  }
 
     const editMovie=(movieData:any)=>{
         console.log("cliccato show edit mvie");
@@ -54,13 +131,13 @@ export const MovieDetail=() =>{
             <Grid item xs={6}>
               <Item>
               <Typography variant="h6" style={leftMargin}>Titolo originale</Typography>
-              <Typography variant="h6" style={rightMargin}>{currentMovie.originalTitle}</Typography>
+             
               </Item>
             </Grid>
             <Grid item xs={12}>
               <Item>
               <Typography variant="h6" style={leftMargin}>Current Position</Typography>
-              <Typography variant="h6" style={rightMargin}>{currentMovie.currentPosition}</Typography>
+            
               </Item>
             </Grid>
             <Grid item xs={6}>
@@ -84,7 +161,6 @@ export const MovieDetail=() =>{
             <Grid item xs={12}>
               <Item>
               <Typography variant="h6" style={leftMargin}>Sceneggiatura</Typography>
-              <Typography variant="h6" style={rightMargin}>{currentMovie.sceneggiatura}</Typography>
               </Item>
             </Grid>
             <Grid item xs={12}>
@@ -96,7 +172,7 @@ export const MovieDetail=() =>{
             <Grid item xs={12}>
               <Item>
               <Typography variant="h6" style={leftMargin}>Movie cast</Typography>
-              <Typography variant="h6" style={rightMargin}>{currentMovie.movieCast}</Typography>
+              <Typography variant="h6" style={rightMargin}>{currentMovie.cast}</Typography>
               </Item>
             </Grid>
             <Grid item xs={12}>
@@ -107,8 +183,8 @@ export const MovieDetail=() =>{
             </Grid>
             <Grid item xs={12}>
               <Item>
-              <Typography variant="h6" style={leftMargin}>Rating</Typography>
-              <Typography variant="h6" style={rightMargin}>{currentMovie.rating}</Typography>
+              <Typography variant="h6" style={leftMargin}>User Rating</Typography>
+              <Typography variant="h6" style={rightMargin}>{currentMovie.userRating}</Typography>
               </Item>
             </Grid>
             <Grid item xs={12}>
@@ -119,14 +195,16 @@ export const MovieDetail=() =>{
             </Grid>
             <Grid item xs={12}>
               <Item>
-              <Typography variant="h6" style={leftMargin}>num ratings</Typography>
-              <Typography variant="h6" style={rightMargin}>{currentMovie.numRatings}</Typography>
+              <Typography variant="h6" style={leftMargin}>User num ratings</Typography>
+              <Typography variant="h6" style={rightMargin}>{currentMovie.userNumRatings}</Typography>
               </Item>
             </Grid>
           </Grid>
           <Box sx={buttonContainer}>
           <Button type="submit" color="primary" variant="contained" sx={buttonStyle} 
-                 onClick={showReviews}>REVIEWS</Button>
+                 onClick={showMetacriticReviews}>METACRITIC REVIEWS</Button>
+                  <Button type="submit" color="primary" variant="contained" sx={buttonStyle} 
+                 onClick={showWebappReviews}>WEBAPP REVIEWS</Button>
         <Button type="submit" color="primary" variant="contained" sx={buttonStyle} 
                  onClick={()=>editMovie(currentMovie)}>EDIT</Button>
                  </Box>
